@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Share Imagery — Ounass</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --ink: #201c1a;
+    --ink-soft: #5c534c;
+    --paper: #faf7f2;
+    --paper-raised: #ffffff;
+    --line: #e4dcd0;
+    --accent: #6f2438;
+    --accent-soft: #f4e6e9;
+    --gold: #a9822f;
+    --success: #35603f;
+    --radius: 3px;
+    --serif: "Source Serif Pro", Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: inherit; }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #efe9e1;
+      --ink-soft: #b6aca0;
+      --paper: #17140f;
+      --paper-raised: #1f1b15;
+      --line: #332c22;
+      --accent: #d98ea0;
+      --accent-soft: #2b1a1f;
+      --gold: #d3ac5d;
+      --success: #7fbf8b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #efe9e1;
+    --ink-soft: #b6aca0;
+    --paper: #17140f;
+    --paper-raised: #1f1b15;
+    --line: #332c22;
+    --accent: #d98ea0;
+    --accent-soft: #2b1a1f;
+    --gold: #d3ac5d;
+    --success: #7fbf8b;
+  }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  .masthead {
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 28px;
+    margin-bottom: 40px;
+  }
+  .masthead .brandname {
+    font-family: var(--serif);
+    font-weight: 600;
+    font-size: clamp(28px, 6vw, 40px);
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+  .masthead p {
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 46ch;
+    font-size: 15px;
+  }
+  .kicker {
+    font-size: 13px;
+    color: var(--accent);
+    font-family: var(--serif);
+    font-style: italic;
+    margin: 0 0 10px;
+  }
+
+  .field {
+    margin-bottom: 28px;
+  }
+  .field label {
+    display: block;
+    font-size: 13.5px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .field .hint {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  textarea, input[type="text"] {
+    width: 100%;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 15px;
+    padding: 12px 14px;
+    resize: vertical;
+  }
+  textarea { min-height: 118px; }
+  textarea:focus, input:focus, button:focus-visible, label.filebtn:focus-within {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .filebtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    cursor: pointer;
+    background: var(--paper-raised);
+    font-size: 14px;
+    color: var(--ink-soft);
+    width: 100%;
+  }
+  .filebtn input { display: none; }
+  .filebtn svg { flex-shrink: 0; }
+
+  .capture {
+    border: 1px solid var(--line);
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-size: 13.5px;
+    margin-top: 12px;
+    display: none;
+  }
+  .capture.show { display: block; }
+  .capture dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+  }
+  .capture dt { color: var(--ink-soft); }
+  .capture dd { margin: 0; font-weight: 600; }
+  .capture .skulist {
+    font-weight: 400;
+    color: var(--ink-soft);
+    font-size: 12.5px;
+  }
+
+  .submit-btn {
+    appearance: none;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 14px 22px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    width: 100%;
+  }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .submit-btn:hover:not(:disabled) { background: #5c1d2e; }
+
+  .attach-note {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-top: 14px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+  }
+
+  .no-brand {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--ink-soft);
+  }
+
+  .sent-panel {
+    border: 1px solid var(--line);
+    background: var(--paper-raised);
+    border-radius: var(--radius);
+    padding: 22px 20px;
+    margin-top: 20px;
+    display: none;
+  }
+  .sent-panel.show { display: block; }
+  .sent-panel h2 {
+    font-family: var(--serif);
+    font-size: 19px;
+    margin: 0 0 8px;
+    color: var(--success);
+  }
+  .sent-panel p { margin: 0; font-size: 14px; color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="masthead" id="masthead">
+    <p class="kicker">Ounass Imagery Intake</p>
+    <h1 class="brandname" id="brandTitle">Share Imagery</h1>
+    <p id="brandSub">Send your product photography links directly to our Product Setup team — no account needed.</p>
+  </div>
+
+  <div id="noBrandBox" style="display:none">
+    <p class="no-brand">This link is missing a brand name. Ask your Ounass contact for your personal submission link.</p>
+  </div>
+
+  <form id="form">
+    <div class="field">
+      <label for="links">Image links <span style="color:var(--ink-soft); font-weight:400;">(one per line)</span></label>
+      <textarea id="links" placeholder="https://drive.google.com/...&#10;https://dropbox.com/..."></textarea>
+      <p class="hint">Paste every link you're sharing for this drop. Google Drive, Dropbox, WeTransfer — anything works.</p>
+    </div>
+
+    <div class="field">
+      <label>Product file <span style="color:var(--ink-soft); font-weight:400;">(optional — .xlsx or .csv)</span></label>
+      <label class="filebtn" id="fileBtnLabel">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span id="fileBtnText">Attach the product/VPN sheet for this drop</span>
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+      </label>
+      <p class="hint">We'll read the Brand, VPN and SKU columns straight from it — you don't need to type them in.</p>
+      <div class="capture" id="capture">
+        <dl>
+          <dt>Brand</dt><dd id="capBrand">—</dd>
+          <dt>VPNs</dt><dd id="capVpn">—</dd>
+          <dt>SKUs</dt><dd id="capSku" class="skulist">—</dd>
+        </dl>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="notes">Note for the team <span style="color:var(--ink-soft); font-weight:400;">(optional)</span></label>
+      <input type="text" id="notes" placeholder="e.g. FW26 drop 2, rush needed by Thursday" />
+    </div>
+
+    <button type="submit" class="submit-btn" id="submitBtn">Send to Ounass Product Setup</button>
+    <p class="attach-note">This opens your email app with everything filled in. If you're sending photos directly rather than links, attach them to that email before you hit send.</p>
+  </form>
+
+  <div class="sent-panel" id="sentPanel">
+    <h2>Your email is ready</h2>
+    <p>Check your email app — the message is drafted and waiting. Just review it and hit send.</p>
+  </div>
+</div>
+
+<script>
+  // The Product Setup Executive (PSE) inbox that receives these submissions.
+  // Update this address for your team.
+  const PSE_EMAIL = "productsetup@ounass.ae";
+
+  // Set per brand when this page is generated for a specific brand.
+  // Leave empty in the template — Claude fills this in when publishing
+  // each brand's own copy of the page.
+  const BRAND_NAME = "";
+
+  function getBrandFromUrl() {
+    // This artifact host normalizes shareable links and drops anything
+    // after the base path (query strings and hash fragments alike), so the
+    // brand name is baked in at publish time instead — see BRAND_NAME below.
+    if (typeof BRAND_NAME === "string" && BRAND_NAME.trim()) return BRAND_NAME.trim();
+    // Fallback: still try the URL, in case a copy of this page is served
+    // somewhere that does preserve query/hash (e.g. self-hosted).
+    if (location.hash && location.hash.length > 1) {
+      const hashParams = new URLSearchParams(location.hash.slice(1));
+      const fromHash = hashParams.get("brand");
+      if (fromHash) return fromHash.trim();
+    }
+    const searchParams = new URLSearchParams(location.search);
+    return (searchParams.get("brand") || "").trim();
+  }
+  const brand = getBrandFromUrl();
+
+  if (!brand) {
+    document.getElementById("masthead").style.display = "none";
+    document.getElementById("form").style.display = "none";
+    document.getElementById("noBrandBox").style.display = "block";
+  } else {
+    document.getElementById("brandTitle").textContent = brand;
+    document.getElementById("brandSub").textContent =
+      "Share this drop's imagery with Ounass — your links go straight to our Product Setup team.";
+    document.title = "Share Imagery — " + brand;
+  }
+
+  let captured = { brand: "", vpnCount: 0, skus: [] };
+
+  function findKey(row, needle) {
+    return Object.keys(row).find(k => k.toLowerCase().replace(/[^a-z]/g, "").includes(needle));
+  }
+
+  document.getElementById("fileInput").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById("fileBtnText").textContent = file.name;
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+      if (!rows.length) throw new Error("empty");
+
+      const brandKey = findKey(rows[0], "brand");
+      const vpnKey = findKey(rows[0], "vpn");
+      const skuKey = findKey(rows[0], "skuid") || findKey(rows[0], "sku");
+
+      const brandNames = new Set();
+      const vpns = new Set();
+      const skus = [];
+      rows.forEach(r => {
+        if (brandKey && r[brandKey]) brandNames.add(String(r[brandKey]).trim());
+        if (vpnKey && r[vpnKey]) vpns.add(String(r[vpnKey]).trim());
+        if (skuKey && r[skuKey]) skus.push(String(r[skuKey]).trim());
+      });
+
+      captured = {
+        brand: [...brandNames].join(", ") || brand || "—",
+        vpnCount: vpns.size,
+        skus,
+      };
+
+      document.getElementById("capBrand").textContent = captured.brand || "—";
+      document.getElementById("capVpn").textContent = captured.vpnCount || "—";
+      document.getElementById("capSku").textContent = skus.length ? skus.slice(0, 8).join(", ") + (skus.length > 8 ? ` +${skus.length - 8} more` : "") : "—";
+      document.getElementById("capture").classList.add("show");
+    } catch (err) {
+      document.getElementById("fileBtnText").textContent = "Couldn't read that file — try .xlsx or .csv";
+    }
+  });
+
+  document.getElementById("form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const links = document.getElementById("links").value.trim();
+    const notes = document.getElementById("notes").value.trim();
+
+    if (!links && !captured.skus.length) {
+      alert("Add at least one image link, or attach a product file.");
+      return;
+    }
+
+    const brandName = brand || captured.brand || "Unknown brand";
+    const subject = `New imagery — ${brandName}${captured.vpnCount ? ` — ${captured.vpnCount} VPNs` : ""}`;
+
+    let body = `Brand: ${brandName}\nStatus: New\n\n`;
+    if (captured.vpnCount) body += `VPN count: ${captured.vpnCount}\n`;
+    if (captured.skus.length) body += `SKUs: ${captured.skus.join(", ")}\n`;
+    body += `\nImage links:\n${links || "(see attached product file / photos)"}\n`;
+    if (notes) body += `\nNote from brand: ${notes}\n`;
+
+    const mailto = `mailto:${PSE_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+    document.getElementById("sentPanel").classList.add("show");
+  });
+</script>
+</body>
+</html>
